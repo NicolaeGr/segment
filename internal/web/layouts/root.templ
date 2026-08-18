@@ -1,0 +1,35 @@
+package layouts
+
+import (
+	"strings"
+
+	"example.com/segments/internal/web/seg"
+)
+
+// RootSegment owns the HTML document; fragments swap into #outlet-root and
+// OOB-swap the <title>. htmx is a CDN; app.js and output.css are local.
+templ RootSegment(child templ.Component) {
+	<html lang="en">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ seg.PageTitle(ctx) }</title>
+			<link rel="stylesheet" href="/static/output.css"/>
+			<script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
+			<script src="/static/app.js" defer></script>
+		</head>
+		<body data-stack={ stackAttr(seg.StackIDs(ctx)) }>
+			<div id="outlet-root">
+				@child
+			</div>
+			<div id="modal-root"></div>
+		</body>
+	</html>
+}
+
+func stackAttr(ids []string) string {
+	if len(ids) == 0 {
+		return "root"
+	}
+	return strings.Join(ids, ",")
+}

@@ -1,0 +1,41 @@
+package pages
+
+templ Login() {
+	<div class="rounded-xl border border-border bg-background p-8 shadow-sm">
+		<div class="text-center">
+			<span class="mx-auto grid h-10 w-10 place-items-center rounded-lg bg-foreground text-background font-semibold">S</span>
+			<h1 class="mt-4 text-xl font-semibold tracking-tight">Welcome back</h1>
+			<p class="mt-1 text-sm text-muted-foreground">Sign in to continue to Acme Inc.</p>
+		</div>
+		<form class="mt-6 space-y-4" method="post" action="/login">
+			<div class="space-y-1.5">
+				<label for="email" class="text-sm font-medium">Email</label>
+				<input
+					id="email"
+					name="email"
+					type="email"
+					required
+					placeholder="you@example.com"
+					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+				/>
+			</div>
+			<div class="space-y-1.5">
+				<div class="flex items-center justify-between">
+					<label for="password" class="text-sm font-medium">Password</label>
+					<a href="/about" hx-get="/about" hx-push-url="true" class="text-xs text-muted-foreground hover:text-foreground">Forgot password?</a>
+				</div>
+				<input
+					id="password"
+					name="password"
+					type="password"
+					required
+					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+				/>
+			</div>
+			<button type="submit" class="btn btn-secondary w-full">Sign in</button>
+		</form>
+		<p class="mt-6 text-center text-sm text-muted-foreground">
+			No account? <a href="/about" hx-get="/about" hx-push-url="true" class="font-medium text-foreground hover:underline">Learn about segments</a>
+		</p>
+	</div>
+}

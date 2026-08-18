@@ -1,0 +1,68 @@
+package pages
+
+import (
+	"net/http"
+
+	"example.com/segments/internal/web/domain"
+	"example.com/segments/internal/web/seg"
+)
+
+// SettingsIndex serves as the full page (no X-Modal) or inside a modal shell
+// (X-Modal: page, handled by seg.Modalable).
+templ SettingsIndex() {
+	<div class="mx-auto max-w-2xl space-y-8">
+		<div>
+			<h1 class="text-2xl font-bold tracking-tight">Settings</h1>
+			<p class="mt-1 text-sm text-muted-foreground">
+				Badge count { badge(seg.Data(ctx, "settings")) } was loaded when the settings segment mounted.
+			</p>
+		</div>
+		<div class="space-y-6">
+			@SettingRow("Profile", "Display name, email and avatar.", "Edit")
+			@SettingRow("Notifications", "Email and in-app notification preferences.", "Edit")
+			@SettingRow("Security", "Password and two-factor authentication.", "Edit")
+			@SettingRow("Billing", "Plan, invoices and payment method.", "Edit")
+		</div>
+		<div class="rounded-lg border border-border bg-muted/40 p-5 text-sm text-muted-foreground">
+			<p>
+				<strong class="font-medium text-foreground">Segment data:</strong>
+				you're viewing this from a request with no
+				<code class="rounded bg-muted px-1.5 py-0.5">X-Modal</code> header — the
+				full page. Use the sidebar link to open it as a modal at the same URL.
+			</p>
+		</div>
+	</div>
+}
+
+templ SettingRow(title, desc, action string) {
+	<div class="flex items-center justify-between gap-4 rounded-lg border border-border bg-background px-5 py-4">
+		<div>
+			<p class="text-sm font-medium">{ title }</p>
+			<p class="mt-0.5 text-sm text-muted-foreground">{ desc }</p>
+		</div>
+		<span class="shrink-0 btn btn-ghost border border-border px-3 py-1.5 text-xs">{ action }</span>
+	</div>
+}
+
+func badge(v any) int {
+	if v == nil {
+		return 0
+	}
+	return v.(*domain.BadgeCounts).N
+}
+
+func settingsTitle(r *http.Request) string {
+	return "Settings — Segments"
+}
+
+func settingsLeaf(r *http.Request) (string, templ.Component) {
+	return settingsTitle(r), SettingsIndex()
+}
+
+func settingsModalOpts() seg.ModalOpts {
+	return seg.ModalOpts{CloseX: true, Esc: true, Backdrop: true, Expand: true, Size: "lg"}
+}
+
+// Exported helpers used by the web package's Modalable registration.
+var SettingsLeaf = settingsLeaf
+var SettingsModalOpts = settingsModalOpts

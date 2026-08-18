@@ -1,0 +1,124 @@
+package layouts
+
+import (
+	"strconv"
+
+	"example.com/segments/internal/web/domain"
+	"example.com/segments/internal/web/seg"
+)
+
+// DashboardSegment wraps authed pages with the app shell; the user is loaded
+// once when the segment mounts, never on child navigation.
+templ DashboardSegment(child templ.Component) {
+	<div class="min-h-dvh bg-background text-foreground">
+		<div class="flex min-h-dvh">
+			<aside class="w-60 shrink-0 border-r border-border bg-background flex flex-col">
+				<div class="flex h-14 items-center gap-2 border-b border-border px-4">
+					<span
+						class="grid h-7 w-7 place-items-center rounded-lg bg-foreground text-background text-sm font-semibold"
+					>S</span>
+					<span class="font-semibold tracking-tight">Segments</span>
+				</div>
+				<nav class="flex-1 space-y-1 p-3 text-sm">
+					<div class="px-3 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+						Workspace
+					</div>
+					<a
+						href="/dashboard"
+						hx-get="/dashboard"
+						hx-push-url="true"
+						class="flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+					>Overview</a>
+					<a
+						href="/dashboard/settings"
+						hx-get="/dashboard/settings"
+						hx-push-url="true"
+						class="flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+					>Settings</a>
+				</nav>
+				<div class="border-t border-border p-3">
+					<a
+						href="/dashboard/settings"
+						hx-get="/dashboard/settings"
+						hx-push-url="/dashboard/settings"
+						hx-headers={ seg.PageModalHeader() }
+						class="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+					>
+						<span class="flex items-center gap-2">
+							<span class="grid h-6 w-6 place-items-center rounded-full bg-muted text-xs">
+								{ initials(seg.Data(ctx, "dashboard")) }
+							</span>
+							Settings
+						</span>
+						<span class="text-xs">⌘K</span>
+					</a>
+					<form action="/logout" method="post" class="mt-1">
+						<button
+							type="submit"
+							class="w-full rounded-md px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+						>
+							Log
+							out
+						</button>
+					</form>
+				</div>
+			</aside>
+			<div class="flex min-w-0 flex-1 flex-col">
+				<header
+					class="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur"
+				>
+					<div class="text-sm font-medium text-muted-foreground">Acme Inc.</div>
+					<div class="flex items-center gap-4">
+						<button
+							type="button"
+							class="relative grid h-9 w-9 place-items-center rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors"
+							hx-post="/notifications/read"
+							hx-swap="none"
+							title="Mark notifications read"
+						>
+							@NotifBell(seg.Data(ctx, "dashboard"))
+						</button>
+						<div class="flex items-center gap-2 text-sm">
+							<span class="grid h-8 w-8 place-items-center rounded-full bg-muted text-xs font-medium">
+								{ initials(seg.Data(ctx, "dashboard")) }
+							</span>
+							<span class="hidden md:inline font-medium">{ userName(seg.Data(ctx, "dashboard")) }</span>
+						</div>
+					</div>
+				</header>
+				<main id="outlet-dashboard" class="flex-1 p-6 md:p-8">
+					@child
+				</main>
+			</div>
+		</div>
+	</div>
+}
+
+templ NotifBell(u any) {
+	if usr, ok := u.(*domain.User); ok && usr != nil {
+		if usr.Notifs > 0 {
+			<span
+				id="notif-badge"
+				class="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] font-semibold text-background"
+			>
+				{ strconv.Itoa(usr.Notifs) }
+			</span>
+		} else {
+			<span id="notif-badge" class="hidden" aria-hidden="true"></span>
+		}
+	}
+}
+
+func userName(u any) string {
+	if usr, ok := u.(*domain.User); ok && usr != nil {
+		return usr.Name
+	}
+	return "Guest"
+}
+
+func initials(u any) string {
+	if usr, ok := u.(*domain.User); ok && usr != nil && len(usr.Name) > 0 {
+		return string([]rune(usr.Name)[0])
+	}
+	return "?"
+}
