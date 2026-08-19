@@ -7,8 +7,6 @@ import (
 	"example.com/segments/internal/web/seg"
 )
 
-// SettingsIndex serves as the full page (no X-Modal) or inside a modal shell
-// (X-Modal: page, handled by seg.Modalable).
 templ SettingsIndex() {
 	<div class="mx-auto max-w-2xl space-y-8">
 		<div>
@@ -19,7 +17,6 @@ templ SettingsIndex() {
 		</div>
 		<div class="space-y-6">
 			@SettingRow("Profile", "Display name, email and avatar.", "Edit")
-			@SettingRow("Notifications", "Email and in-app notification preferences.", "Edit")
 			@SettingRow("Security", "Password and two-factor authentication.", "Edit")
 			@SettingRow("Billing", "Plan, invoices and payment method.", "Edit")
 		</div>
@@ -32,6 +29,44 @@ templ SettingsIndex() {
 			</p>
 		</div>
 	</div>
+}
+
+templ NotifToggle(title, desc string, checked ...bool) {
+	<div class="flex items-center justify-between gap-4 px-5 py-4">
+		<div>
+			<p class="text-sm font-medium">{ title }</p>
+			<p class="mt-0.5 text-sm text-muted-foreground">{ desc }</p>
+		</div>
+		<button
+			type="button"
+			role="switch"
+			aria-checked={ notifChecked(checked) }
+			class={ "relative h-6 w-11 shrink-0 rounded-full transition-colors", notifSwitchClass(checked) }
+		>
+			<span class={ "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background shadow transition-transform", notifThumbClass(checked) }></span>
+		</button>
+	</div>
+}
+
+func notifChecked(checked []bool) string {
+	if len(checked) > 0 && checked[0] {
+		return "true"
+	}
+	return "false"
+}
+
+func notifSwitchClass(checked []bool) string {
+	if len(checked) > 0 && checked[0] {
+		return "bg-foreground"
+	}
+	return "bg-muted"
+}
+
+func notifThumbClass(checked []bool) string {
+	if len(checked) > 0 && checked[0] {
+		return "translate-x-5"
+	}
+	return ""
 }
 
 templ SettingRow(title, desc, action string) {

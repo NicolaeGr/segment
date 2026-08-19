@@ -1,7 +1,5 @@
 package layouts
 
-// AuthSegment wraps login with a centered card over a gradient; it also
-// locks scrolling via body[data-stack~="auth"] in the stylesheet.
 templ AuthSegment(child templ.Component) {
 	<div class="relative grid min-h-dvh place-items-center overflow-hidden px-4">
 		<div class="pointer-events-none absolute inset-0 auth-bg" aria-hidden="true"></div>

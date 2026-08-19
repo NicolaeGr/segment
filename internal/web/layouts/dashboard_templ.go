@@ -15,8 +15,6 @@ import (
 	"example.com/segments/internal/web/seg"
 )
 
-// DashboardSegment wraps authed pages with the app shell; the user is loaded
-// once when the segment mounts, never on child navigation.
 func DashboardSegment(child templ.Component) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -38,67 +36,93 @@ func DashboardSegment(child templ.Component) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"min-h-dvh bg-background text-foreground\"><div class=\"flex min-h-dvh\"><aside class=\"w-60 shrink-0 border-r border-border bg-background flex flex-col\"><div class=\"flex h-14 items-center gap-2 border-b border-border px-4\"><span class=\"grid h-7 w-7 place-items-center rounded-lg bg-foreground text-background text-sm font-semibold\">S</span> <span class=\"font-semibold tracking-tight\">Segments</span></div><nav class=\"flex-1 space-y-1 p-3 text-sm\"><div class=\"px-3 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground\">Workspace</div><a href=\"/dashboard\" hx-get=\"/dashboard\" hx-push-url=\"true\" class=\"flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors\">Overview</a> <a href=\"/dashboard/settings\" hx-get=\"/dashboard/settings\" hx-push-url=\"true\" class=\"flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors\">Settings</a></nav><div class=\"border-t border-border p-3\"><a href=\"/dashboard/settings\" hx-get=\"/dashboard/settings\" hx-push-url=\"/dashboard/settings\" hx-headers=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"min-h-dvh bg-background text-foreground\"><div class=\"flex min-h-dvh\"><aside class=\"w-60 shrink-0 border-r border-border bg-background flex flex-col\"><div class=\"flex h-14 items-center gap-2 border-b border-border px-4\"><span class=\"grid h-7 w-7 place-items-center rounded-lg bg-foreground text-background text-sm font-semibold\">S</span> <span class=\"font-semibold tracking-tight\">Segments</span></div><nav class=\"flex-1 space-y-1 p-3 text-sm\"><div class=\"px-3 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground\">Workspace</div><a href=\"/dashboard\" hx-get=\"/dashboard\" hx-push-url=\"true\" class=\"flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors\">Overview</a> <a href=\"/dashboard/settings\" hx-get=\"/dashboard/settings\" hx-push-url=\"true\" class=\"flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors\">Settings</a></nav><div class=\"border-t border-border p-3\"><button type=\"button\" popovertarget=\"user-menu\" class=\"popover-user-trigger flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted transition-colors\"><span class=\"grid h-8 w-8 place-items-center rounded-full bg-muted text-xs font-medium\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(seg.PageModalHeader())
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(initials(seg.Data(ctx, "dashboard")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/dashboard.templ`, Line: 44, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/dashboard.templ`, Line: 44, Col: 45}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" class=\"flex w-full items-center justify-between rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors\"><span class=\"flex items-center gap-2\"><span class=\"grid h-6 w-6 place-items-center rounded-full bg-muted text-xs\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</span> <span class=\"flex min-w-0 flex-1 flex-col items-start\"><span class=\"truncate font-medium\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(initials(seg.Data(ctx, "dashboard")))
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(userName(seg.Data(ctx, "dashboard")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/dashboard.templ`, Line: 49, Col: 46}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/dashboard.templ`, Line: 47, Col: 80}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span> Settings</span> <span class=\"text-xs\">⌘K</span></a><form action=\"/logout\" method=\"post\" class=\"mt-1\"><button type=\"submit\" class=\"w-full rounded-md px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors\">Log out</button></form></div></aside><div class=\"flex min-w-0 flex-1 flex-col\"><header class=\"sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur\"><div class=\"text-sm font-medium text-muted-foreground\">Acme Inc.</div><div class=\"flex items-center gap-4\"><button type=\"button\" class=\"relative grid h-9 w-9 place-items-center rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors\" hx-post=\"/notifications/read\" hx-swap=\"none\" title=\"Mark notifications read\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NotifBell(seg.Data(ctx, "dashboard")).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</button><div class=\"flex items-center gap-2 text-sm\"><span class=\"grid h-8 w-8 place-items-center rounded-full bg-muted text-xs font-medium\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span> <span class=\"truncate text-xs text-muted-foreground\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(initials(seg.Data(ctx, "dashboard")))
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(userEmail(seg.Data(ctx, "dashboard")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/dashboard.templ`, Line: 83, Col: 46}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/dashboard.templ`, Line: 48, Col: 99}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</span> <span class=\"hidden md:inline font-medium\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span></span> <span class=\"text-muted-foreground text-xs\"><svg class=\"h-3.5 w-3.5\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"></path></svg></span></button><div id=\"user-menu\" popover class=\"w-64 rounded-lg p-1 text-sm\"><div class=\"px-3 py-2\"><p class=\"font-medium\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(userName(seg.Data(ctx, "dashboard")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/dashboard.templ`, Line: 85, Col: 88}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/dashboard.templ`, Line: 56, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</span></div></div></header><main id=\"outlet-dashboard\" class=\"flex-1 p-6 md:p-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</p><p class=\"truncate text-xs text-muted-foreground\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var6 string
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(userEmail(seg.Data(ctx, "dashboard")))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/dashboard.templ`, Line: 57, Col: 96}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p></div><div class=\"my-1 border-t border-border\"></div><a href=\"/dashboard/settings\" hx-get=\"/dashboard/settings\" hx-push-url=\"/dashboard/settings\" hx-headers=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(seg.PageModalHeader())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/dashboard.templ`, Line: 64, Col: 41}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" class=\"flex w-full items-center gap-2 rounded-md px-3 py-2 text-left hover:bg-muted transition-colors\">Settings</a> <button type=\"button\" onclick=\"toggleTheme()\" class=\"flex w-full items-center gap-2 rounded-md px-3 py-2 text-left hover:bg-muted transition-colors\"><span>Toggle theme</span> <span class=\"ml-auto text-muted-foreground\" data-theme-icon><svg class=\"h-4 w-4\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z\"></path></svg></span></button><div class=\"my-1 border-t border-border\"></div><form action=\"/logout\" method=\"post\"><button type=\"submit\" class=\"flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-muted-foreground hover:bg-muted hover:text-foreground transition-colors\">Log out</button></form></div></div></aside><div class=\"flex min-w-0 flex-1 flex-col\"><header class=\"sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur\"><div class=\"text-sm font-medium text-muted-foreground\">Acme Inc.</div><div class=\"flex items-center gap-2\"><button type=\"button\" popovertarget=\"notifs-popover\" class=\"popover-notifs-trigger relative grid h-8 w-8 place-items-center rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors\" title=\"Notifications\"><svg class=\"h-5 w-5\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9\"></path> <path d=\"M13.73 21a2 2 0 0 1-3.46 0\"></path></svg>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = NotifBadge(seg.Data(ctx, "dashboard")).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</button><div id=\"notifs-popover\" popover class=\"w-80 rounded-lg p-1 text-sm\"><div class=\"flex items-center justify-between px-3 py-2\"><p class=\"font-medium\">Notifications</p><button type=\"button\" class=\"text-xs text-muted-foreground hover:text-foreground\" hx-post=\"/notifications/read\" hx-swap=\"none\">Mark all read</button></div><div class=\"my-1 border-t border-border\"></div><ul class=\"space-y-1\"><li class=\"flex items-center justify-between rounded-md px-3 py-2 hover:bg-muted\"><span>New signup from acme.org</span> <span class=\"text-xs text-muted-foreground\">2m</span></li><li class=\"flex items-center justify-between rounded-md px-3 py-2 hover:bg-muted\"><span>Invoice #2041 paid</span> <span class=\"text-xs text-muted-foreground\">1h</span></li></ul><div class=\"my-1 border-t border-border\"></div><a href=\"/dashboard/settings/notifications\" hx-get=\"/dashboard/settings/notifications\" hx-push-url=\"true\" class=\"block rounded-md px-3 py-2 text-center text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors\">Notification settings</a></div></div></header><main id=\"outlet-dashboard\" class=\"flex-1 p-6 md:p-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -106,7 +130,7 @@ func DashboardSegment(child templ.Component) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</main></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</main></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -114,7 +138,9 @@ func DashboardSegment(child templ.Component) templ.Component {
 	})
 }
 
-func NotifBell(u any) templ.Component {
+// NotifBadge shows the unread count badge on the header bell (OOB-updated by
+// seg.NotifBadge); hidden when the count is 0.
+func NotifBadge(u any) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -130,39 +156,44 @@ func NotifBell(u any) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var6 == nil {
-			templ_7745c5c3_Var6 = templ.NopComponent
+		templ_7745c5c3_Var8 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var8 == nil {
+			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		if usr, ok := u.(*domain.User); ok && usr != nil {
-			if usr.Notifs > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span id=\"notif-badge\" class=\"absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] font-semibold text-background\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var7 string
-				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(usr.Notifs))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/dashboard.templ`, Line: 104, Col: 30}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<span id=\"notif-badge\" class=\"hidden\" aria-hidden=\"true\"></span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
+		if n := notifCount(u); n > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<span id=\"notif-badge\" class=\"absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] font-semibold text-background\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(n))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/dashboard.templ`, Line: 148, Col: 185}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<span id=\"notif-badge\" class=\"hidden\" aria-hidden=\"true\"></span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
 		}
 		return nil
 	})
+}
+
+func notifCount(u any) int {
+	if usr, ok := u.(*domain.User); ok && usr != nil {
+		return usr.Notifs
+	}
+	return 0
 }
 
 func userName(u any) string {
@@ -170,6 +201,13 @@ func userName(u any) string {
 		return usr.Name
 	}
 	return "Guest"
+}
+
+func userEmail(u any) string {
+	if usr, ok := u.(*domain.User); ok && usr != nil {
+		return usr.Email
+	}
+	return ""
 }
 
 func initials(u any) string {

@@ -14,8 +14,6 @@ import (
 	"example.com/segments/internal/web/seg"
 )
 
-// RootSegment owns the HTML document; fragments swap into #outlet-root and
-// OOB-swap the <title>. htmx is a CDN; app.js and output.css are local.
 func RootSegment(child templ.Component) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -44,13 +42,13 @@ func RootSegment(child templ.Component) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(seg.PageTitle(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/root.templ`, Line: 16, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/layouts/root.templ`, Line: 14, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"stylesheet\" href=\"/static/output.css\"><script src=\"https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js\" defer></script><script src=\"/static/app.js\" defer></script></head><body data-stack=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"stylesheet\" href=\"/static/output.css\"><script src=\"/static/theme.js\"></script><script src=\"https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js\" defer></script><script type=\"module\" src=\"https://unpkg.com/@oddbird/css-anchor-positioning\"></script><script src=\"/static/app.js\" defer></script></head><body data-stack=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

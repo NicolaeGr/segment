@@ -1,19 +1,17 @@
 @import "tailwindcss";
 
-/* Grayscale, shadcn-inspired tokens, light-only. This is the Tailwind v4
-   source; compile to output.css (what the browser loads):
-     nix shell nixpkgs#tailwindcss_4 -c tailwindcss -i assets/style.css -o assets/output.css
-   @theme registers the tokens as utilities (bg-background, border-border, ...);
-   values are oklch so opacity modifiers (bg-background/80) work. */
+@custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  --color-background: oklch(1 0 0);
-  --color-foreground: oklch(0.145 0 0);
-  --color-muted: oklch(0.968 0 0);
-  --color-muted-foreground: oklch(0.556 0 0);
-  --color-border: oklch(0.922 0 0);
-  --color-input: oklch(0.92 0 0);
-  --color-ring: oklch(0.145 0 0);
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -22,6 +20,28 @@
 
 :root {
   --radius: 0.5rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --muted: oklch(0.968 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.92 0 0);
+  --ring: oklch(0.145 0 0);
+  color-scheme: light;
+}
+:root.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --popover: oklch(0.18 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  color-scheme: dark;
 }
 
 * {
@@ -77,8 +97,6 @@ h3 {
   letter-spacing: -0.02em;
 }
 
-/* buttons */
-
 .btn {
   display: inline-flex;
   align-items: center;
@@ -101,16 +119,18 @@ h3 {
   pointer-events: none;
 }
 
-/* solid gray button */
 .btn-secondary {
   background: var(--color-muted);
   color: var(--color-foreground);
 }
 .btn-secondary:hover {
-  background: oklch(0.9 0 0);
+  background: color-mix(
+    in oklab,
+    var(--color-muted) 85%,
+    var(--color-foreground)
+  );
 }
 
-/* white button with a darker outline */
 .btn-outline {
   background: var(--color-background);
   border: 1px solid var(--color-input);
@@ -120,7 +140,6 @@ h3 {
   background: var(--color-muted);
 }
 
-/* subtle ghost button */
 .btn-ghost {
   background: transparent;
   color: var(--color-muted-foreground);
@@ -130,9 +149,6 @@ h3 {
   color: var(--color-foreground);
 }
 
-/* segment-driven body styling: body[data-stack] lets CSS react to mounted
-   segments (auth locks scrolling + paints a light gradient). */
-
 body[data-stack~="auth"] {
   overflow: hidden;
 }
@@ -141,13 +157,16 @@ body[data-stack~="auth"] {
   background:
     radial-gradient(
       60% 60% at 50% 0%,
-      oklch(0.95 0 0 / 0.9) 0%,
+      color-mix(
+          in oklab,
+          var(--color-background) 60%,
+          var(--color-foreground) 4%
+        )
+        0%,
       transparent 70%
     ),
-    linear-gradient(180deg, oklch(0.98 0 0), oklch(1 0 0));
+    linear-gradient(180deg, var(--color-background), var(--color-muted));
 }
-
-/* app toast (showToast trigger) */
 
 .app-toast {
   position: fixed;
@@ -170,4 +189,37 @@ body[data-stack~="auth"] {
 .app-toast.show {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+[popover] {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.popover-user-trigger {
+  anchor-name: --user-menu-trigger;
+}
+.popover-notifs-trigger {
+  anchor-name: --notifs-trigger;
+}
+
+#user-menu,
+#notifs-popover {
+  position: absolute;
+  position-try-fallbacks: flip-block;
+  margin: 0.5rem;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.18);
+}
+#user-menu {
+  position-anchor: --user-menu-trigger;
+  position-area: top span-left;
+}
+#notifs-popover {
+  position-anchor: --notifs-trigger;
+  position-area: bottom span-right;
 }

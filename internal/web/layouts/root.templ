@@ -6,8 +6,6 @@ import (
 	"example.com/segments/internal/web/seg"
 )
 
-// RootSegment owns the HTML document; fragments swap into #outlet-root and
-// OOB-swap the <title>. htmx is a CDN; app.js and output.css are local.
 templ RootSegment(child templ.Component) {
 	<html lang="en">
 		<head>
@@ -15,7 +13,9 @@ templ RootSegment(child templ.Component) {
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ seg.PageTitle(ctx) }</title>
 			<link rel="stylesheet" href="/static/output.css"/>
+			<script src="/static/theme.js"></script>
 			<script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
+			<script type="module" src="https://unpkg.com/@oddbird/css-anchor-positioning"></script>
 			<script src="/static/app.js" defer></script>
 		</head>
 		<body data-stack={ stackAttr(seg.StackIDs(ctx)) }>

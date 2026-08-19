@@ -6,6 +6,7 @@ package web
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
@@ -35,12 +36,13 @@ func Router() http.Handler {
 		Render: func(ctx context.Context, _ any, child templ.Component) templ.Component { return layouts.AuthSegment(child) },
 	}
 	dashboard := seg.Segment{
-		ID: "dashboard",
+		ID:     "dashboard",
+		TTL:    5 * time.Minute,
+		Scoped: true, // per-user data
 		Render: func(ctx context.Context, _ any, child templ.Component) templ.Component {
 			return layouts.DashboardSegment(child)
 		},
-		// Load runs once, when the segment mounts — never per child navigation.
-		Load: func(r *http.Request) (any, error) {
+		Load: func(ctx context.Context) (any, error) {
 			return &domain.User{
 				Name:   "Ada Lovelace",
 				Email:  "ada@acme.example",
@@ -50,8 +52,10 @@ func Router() http.Handler {
 	}
 	settings := seg.Segment{
 		ID:     "settings",
+		TTL:    5 * time.Minute,
+		Scoped: true, // per-user data
 		Render: func(ctx context.Context, _ any, child templ.Component) templ.Component { return layouts.SettingsSegment(child) },
-		Load:   func(r *http.Request) (any, error) { return &domain.BadgeCounts{N: 7}, nil },
+		Load:   func(ctx context.Context) (any, error) { return &domain.BadgeCounts{N: 7}, nil },
 	}
 
 	// The root segment owns the document; every branch sits under it.
@@ -86,8 +90,11 @@ func Router() http.Handler {
 				seg.Page(w, r, "Overview — Acme", pages.DashHome())
 			})
 
-			// Badge freshness via OOB swap (button posts with hx-swap="none").
+			// Mark notifications read: invalidate the cached user (next request
+			// refetches) and update the visible badge via OOB now.
 			r.Post("/notifications/read", func(w http.ResponseWriter, r *http.Request) {
+				sid := seg.SessionID(w, r)
+				seg.Invalidate("dashboard", sid)
 				w.Header().Set("HX-Trigger", `showToast`)
 				_ = seg.NotifBadge(0).Render(r.Context(), w)
 			})
@@ -103,6 +110,7 @@ func Router() http.Handler {
 				oob := []templ.Component{layouts.SettingsTabsOOB()}
 
 				r.Get("/", seg.Modalable(shell, pages.SettingsLeaf, pages.SettingsModalOpts(), oob...))
+				r.Get("/notifications", seg.Modalable(shell, pages.NotificationsLeaf, pages.SettingsModalOpts(), oob...))
 				r.Get("/billing", seg.Modalable(shell, pages.BillingLeaf, pages.SettingsModalOpts(), oob...))
 			})
 		})

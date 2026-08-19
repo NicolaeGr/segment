@@ -13,6 +13,8 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/a-h/templ"
 )
@@ -24,11 +26,21 @@ const (
 	headerDropSegs  = "X-Drop-Segments"
 )
 
+// Segment is one level of the layout tree.
 type Segment struct {
 	ID string
-	Render func(ctx context.Context, data any, child templ.Component) templ.Component	
-	// Load runs exactly when the segment mounts — never on child navigation.
-	Load   func(r *http.Request) (any, error)
+	// Render wraps child in this segment's layout. data is this segment's
+	// cached Load result, available on every request in the subtree.
+	Render func(ctx context.Context, data any, child templ.Component) templ.Component
+	// Load runs for every request under this segment (see Use); its result is
+	// cached per the TTL/Scoped settings so the real fetch happens once.
+	Load func(ctx context.Context) (any, error)
+	// TTL is how long the loaded data stays cached; 0 = never cache (always
+	// fetch on every request).
+	TTL time.Duration
+	// Scoped: true keys the cache per session (user data), false shares one
+	// entry across all visitors (global config, feature flags, ...).
+	Scoped bool
 }
 
 type ctxKey int
@@ -118,13 +130,19 @@ func StackIDs(ctx context.Context) []string {
 	return ids
 }
 
-// Use records a segment on every request in the subtree and runs its loader
-// only when the segment is not already mounted client-side.
+// Use runs a segment's middleware for every request in the subtree,
+// unconditionally — full page load or fragment alike. Its Load result is
+// served from (and stored to) the cache, so the real fetch happens once per
+// TTL, but the data is always in the request context for any leaf to read,
+// regardless of whether this request renders this segment's HTML. This is
+// what lets a deeply nested leaf assume its ancestors' data without knowing
+// whether the response will be a full render or a renderTail fragment.
 func Use(s Segment) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if s.Load != nil && !isMounted(r, s.ID) {
-				data, err := s.Load(r)
+			if s.Load != nil {
+				sessionID := SessionID(w, r)
+				data, err := DefaultCache.Get(r.Context(), cacheKey(s, sessionID), s)
 				if err != nil {
 					http.Error(w, "load segment "+s.ID+": "+err.Error(), http.StatusInternalServerError)
 					return
@@ -134,6 +152,76 @@ func Use(s Segment) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(pushSegment(r.Context(), s)))
 		})
 	}
+}
+
+// Cache stores segment Load results. The in-memory sync.Map is the reference
+// implementation; swap the backend (Redis, ...) behind the same interface when
+// scaling past one process. Correctness comes from the expiresAt check at
+// read time — a background sweeper is only a memory optimization.
+type Cache interface {
+	Get(ctx context.Context, key string, seg Segment) (any, error)
+	Invalidate(segID, sessionID string)
+	InvalidateGlobal(segID string)
+}
+
+type cacheEntry struct {
+	data      any
+	expiresAt time.Time
+}
+
+type memoryCache struct {
+	store sync.Map
+}
+
+// DefaultCache is the process-wide cache used by the middleware.
+var DefaultCache Cache = &memoryCache{}
+
+func cacheKey(seg Segment, sessionID string) string {
+	if seg.Scoped {
+		return "u:" + sessionID + ":" + seg.ID
+	}
+	return "g:" + seg.ID
+}
+
+func (c *memoryCache) Get(ctx context.Context, key string, seg Segment) (any, error) {
+	if e, ok := c.store.Load(key); ok {
+		entry := e.(cacheEntry)
+		if time.Now().Before(entry.expiresAt) {
+			return entry.data, nil
+		}
+	}
+	val, err := seg.Load(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if seg.TTL > 0 {
+		c.store.Store(key, cacheEntry{val, time.Now().Add(seg.TTL)})
+	}
+	return val, nil
+}
+
+func (c *memoryCache) Invalidate(segID, sessionID string) {
+	c.store.Delete("u:" + sessionID + ":" + segID)
+}
+
+func (c *memoryCache) InvalidateGlobal(segID string) {
+	c.store.Delete("g:" + segID)
+}
+
+// Invalidate and InvalidateGlobal are package-level helpers over DefaultCache,
+// for use from mutation handlers (same request that performs the write).
+func Invalidate(segID, sessionID string)     { DefaultCache.Invalidate(segID, sessionID) }
+func InvalidateGlobal(segID string)           { DefaultCache.InvalidateGlobal(segID) }
+
+// SessionID returns a stable per-browser id, creating one on first visit.
+func SessionID(w http.ResponseWriter, r *http.Request) string {
+	const name = "seg_session"
+	if c, err := r.Cookie(name); err == nil && c.Value != "" {
+		return c.Value
+	}
+	id := fmt.Sprintf("%d-%d", time.Now().UnixNano(), len(r.Header.Get("User-Agent")))
+	http.SetCookie(w, &http.Cookie{Name: name, Value: id, Path: "/", HttpOnly: true})
+	return id
 }
 
 func Page(w http.ResponseWriter, r *http.Request, title string, leaf templ.Component) {
@@ -315,7 +403,9 @@ func Modalable(shell ShellFunc, leaf LeafFunc, opts ModalOpts, oob ...templ.Comp
 
 		switch marker {
 		case "":
-			Page(w, r, title, comp)
+			// Full-page navigation: render through the stack and OOB-refresh
+			// chrome (tabs) so the active state updates with the URL.
+			PageWith(w, r, title, comp, oob...)
 			return
 
 		case ModalNone:
@@ -352,12 +442,20 @@ func Modalable(shell ShellFunc, leaf LeafFunc, opts ModalOpts, oob ...templ.Comp
 			comp = last.Render(ctx, Data(ctx, last.ID), comp)
 		}
 
+		// "Back"/close should return to the page the modal was opened from.
+		// htmx sends HX-Current-URL on every request; on a direct modal-URL
+		// load it's absent, so fall back to the URL parent.
+		parent := r.Header.Get("HX-Current-URL")
+		if parent == "" {
+			parent = parentURL(r.URL.Path)
+		}
+
 		w.Header().Set("HX-Retarget", "#modal-root")
 		w.Header().Set("HX-Reswap", "innerHTML")
 		if marker == ModalPage {
 			w.Header().Set("HX-Push-Url", r.URL.Path)
 		}
-		_ = shell(ctx, opts, owner, r.URL.Path, parentURL(r.URL.Path), comp).Render(ctx, w)
+		_ = shell(ctx, opts, owner, r.URL.Path, parent, comp).Render(ctx, w)
 	}
 }
 
@@ -374,10 +472,6 @@ func parentURL(p string) string {
 
 func isHX(r *http.Request) bool {
 	return r.Header.Get("HX-Request") == "true"
-}
-
-func isMounted(r *http.Request, id string) bool {
-	return mountedSet(r)[id]
 }
 
 func mountedSet(r *http.Request) map[string]bool {

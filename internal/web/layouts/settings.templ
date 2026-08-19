@@ -1,13 +1,7 @@
 package layouts
 
-import (
-	"strings"
+import "example.com/segments/internal/web/seg"
 
-	"example.com/segments/internal/web/seg"
-)
-
-// SettingsSegment wraps settings pages with a tab bar. Active tab comes from
-// seg.Path; inside a modal the links carry the modal target + X-Modal:keep.
 templ SettingsSegment(child templ.Component) {
 	<div>
 		@SettingsTabs()
@@ -18,18 +12,28 @@ templ SettingsSegment(child templ.Component) {
 }
 
 templ SettingsTabs() {
-	<nav id="settings-tabs" class="flex items-center gap-1 border-b border-border text-sm">
+	<nav id={ settingsTabsID(seg.InModal(ctx)) } class="flex items-center gap-1 border-b border-border text-sm">
 		@SettingsTab("/dashboard/settings", "General")
+		@SettingsTab("/dashboard/settings/notifications", "Notifications")
 		@SettingsTab("/dashboard/settings/billing", "Billing")
 	</nav>
 }
 
-// SettingsTabsOOB refreshes the tab bar in place after a leaf-only swap.
+// refreshes the tab bar in place after a leaf-only swap.
 templ SettingsTabsOOB() {
-	<nav id="settings-tabs" hx-swap-oob="outerHTML" class="flex items-center gap-1 border-b border-border text-sm">
+	<nav id={ settingsTabsID(seg.InModal(ctx)) } hx-swap-oob="outerHTML" class="flex items-center gap-1 border-b border-border text-sm">
 		@SettingsTab("/dashboard/settings", "General")
+		@SettingsTab("/dashboard/settings/notifications", "Notifications")
 		@SettingsTab("/dashboard/settings/billing", "Billing")
 	</nav>
+}
+
+// required to be able to have both the page and modal without OOB-swap conflicts
+func settingsTabsID(inModal bool) string {
+	if inModal {
+		return "settings-tabs-modal"
+	}
+	return "settings-tabs"
 }
 
 templ SettingsTab(href, label string) {
@@ -45,10 +49,8 @@ templ SettingsTab(href, label string) {
 	>{ label }</a>
 }
 
-// settingsTabClass highlights the tab whose URL matches (or is a parent of)
-// the current path.
 func settingsTabClass(current, href string) string {
-	if current == href || strings.HasPrefix(current, href+"/") {
+	if current == href {
 		return "text-foreground border-b-2 border-foreground"
 	}
 	return "text-muted-foreground hover:bg-muted hover:text-foreground"

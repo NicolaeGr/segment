@@ -5,8 +5,6 @@ import (
 	"example.com/segments/internal/web/seg"
 )
 
-// DashHome is the dashboard overview; seg.Data(ctx, "dashboard") is the user
-// loaded once when the dashboard segment mounted.
 templ DashHome() {
 	<div class="space-y-8">
 		<div class="flex flex-wrap items-end justify-between gap-4">
@@ -67,8 +65,6 @@ templ Activity(title, time string) {
 	</li>
 }
 
-// userName mirrors the layouts helper so pages can render the dashboard
-// segment's loaded user without reaching into another package.
 func userName(v any) string {
 	if usr, ok := v.(*domain.User); ok && usr != nil {
 		return usr.Name

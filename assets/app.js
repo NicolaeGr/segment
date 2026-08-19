@@ -10,13 +10,14 @@
 let mounted = (document.body.dataset.stack || "root").split(",");
 
 document.body.addEventListener("htmx:configRequest", (e) => {
-  // X-Drop-Segments (baked into the expand button) names segments that are
-  // mounted only inside the modal; drop them so the server reloads them for
-  // the full page.
+  // X-Drop-Segments (baked into the expand button) marks a "leave the modal
+  // and render the whole page" request. The modal's segments were reported
+  // as mounted, but the page is about to be re-rendered from scratch, so
+  // drop everything except root — every segment's Load runs again and the
+  // re-rendered layout gets fresh data.
   const drop = e.detail.headers["X-Drop-Segments"];
   if (drop) {
-    const dropped = new Set(drop.split(","));
-    mounted = mounted.filter((id) => !dropped.has(id));
+    mounted = ["root"];
   }
 
   e.detail.headers["X-Mounted-Segments"] = mounted.join(",");
