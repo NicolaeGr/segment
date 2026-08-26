@@ -1,9 +1,7 @@
-// Package seg implements a server-driven "segment stack": every layout is a
-// segment (stable ID + outlet + optional loader). Middleware records the
+// Package seg implements a server-driven "segment stack": layouts are
+// segments (stable ID + outlet + optional loader). Middleware records the
 // stack a route sits under; the renderer diffs it against the client's
-// mounted segments (X-Mounted-Segments header) and returns only the missing
-// tail as an htmx fragment. The whole "framework" is one middleware, one
-// renderer, one modal wrapper; everything else is plain templ + chi.
+// mounted segments (X-Mounted-Segments) and returns only the missing tail.
 package seg
 
 import (
@@ -20,26 +18,26 @@ import (
 )
 
 const (
-	headerMounted   = "X-Mounted-Segments"
-	headerModal     = "X-Modal"
+	headerMounted    = "X-Mounted-Segments"
+	headerModal      = "X-Modal"
 	headerModalOwner = "X-Modal-Owner"
-	headerDropSegs  = "X-Drop-Segments"
+	headerDropSegs   = "X-Drop-Segments"
 )
 
-// Segment is one level of the layout tree.
 type Segment struct {
-	ID string
-	// Render wraps child in this segment's layout. data is this segment's
-	// cached Load result, available on every request in the subtree.
+	ID     string
 	Render func(ctx context.Context, data any, child templ.Component) templ.Component
-	// Load runs for every request under this segment (see Use); its result is
-	// cached per the TTL/Scoped settings so the real fetch happens once.
+	// Load runs for every request under this segment; its result is cached per
+	// the TTL/Scoped settings so the real fetch happens once.
 	Load func(ctx context.Context) (any, error)
-	// TTL is how long the loaded data stays cached; 0 = never cache (always
-	// fetch on every request).
+	// Decode rebuilds a cached value from its serialized form (required by
+	// external caches like Redis that store JSON; ignored by the in-memory
+	// cache, which keeps the live value).
+	Decode func([]byte) (any, error)
+	// TTL: how long loaded data stays cached; 0 = never cache.
 	TTL time.Duration
-	// Scoped: true keys the cache per session (user data), false shares one
-	// entry across all visitors (global config, feature flags, ...).
+	// Scoped: true keys the cache per session, false shares one entry across
+	// all visitors.
 	Scoped bool
 }
 
@@ -94,21 +92,16 @@ func Data(ctx context.Context, id string) any {
 	return m[id]
 }
 
-// Path returns the request path of the current render, so components can
-// derive active state (e.g. tab highlights) from the URL server-side.
 func Path(ctx context.Context) string {
 	p, _ := ctx.Value(keyPath).(string)
 	return p
 }
 
-// InModal reports whether the current render is inside a modal shell.
 func InModal(ctx context.Context) bool {
 	v, _ := ctx.Value(keyInModal).(bool)
 	return v
 }
 
-// ModalOwner returns the segment the current modal belongs to: the innermost
-// segment of the stack ("" when not in a modal).
 func ModalOwner(ctx context.Context) string {
 	if !InModal(ctx) {
 		return ""
@@ -130,13 +123,10 @@ func StackIDs(ctx context.Context) []string {
 	return ids
 }
 
-// Use runs a segment's middleware for every request in the subtree,
-// unconditionally — full page load or fragment alike. Its Load result is
-// served from (and stored to) the cache, so the real fetch happens once per
-// TTL, but the data is always in the request context for any leaf to read,
-// regardless of whether this request renders this segment's HTML. This is
-// what lets a deeply nested leaf assume its ancestors' data without knowing
-// whether the response will be a full render or a renderTail fragment.
+// Use runs a segment's middleware on every request in the subtree, full load
+// or fragment alike. Load is served from the cache, so the real fetch happens
+// once per TTL, and the data is always in the request context for any leaf to
+// read regardless of whether this response renders this segment's HTML.
 func Use(s Segment) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -155,9 +145,7 @@ func Use(s Segment) func(http.Handler) http.Handler {
 }
 
 // Cache stores segment Load results. The in-memory sync.Map is the reference
-// implementation; swap the backend (Redis, ...) behind the same interface when
-// scaling past one process. Correctness comes from the expiresAt check at
-// read time — a background sweeper is only a memory optimization.
+// implementation; external backends (Redis) implement the same interface.
 type Cache interface {
 	Get(ctx context.Context, key string, seg Segment) (any, error)
 	Invalidate(segID, sessionID string)
@@ -173,7 +161,6 @@ type memoryCache struct {
 	store sync.Map
 }
 
-// DefaultCache is the process-wide cache used by the middleware.
 var DefaultCache Cache = &memoryCache{}
 
 func cacheKey(seg Segment, sessionID string) string {
@@ -183,6 +170,9 @@ func cacheKey(seg Segment, sessionID string) string {
 	return "g:" + seg.ID
 }
 
+// CacheKey returns the storage key for a segment under a session, so external
+// backends (Redis) use the same key scheme as the in-memory one.
+func CacheKey(seg Segment, sessionID string) string { return cacheKey(seg, sessionID) }
 func (c *memoryCache) Get(ctx context.Context, key string, seg Segment) (any, error) {
 	if e, ok := c.store.Load(key); ok {
 		entry := e.(cacheEntry)
@@ -208,12 +198,9 @@ func (c *memoryCache) InvalidateGlobal(segID string) {
 	c.store.Delete("g:" + segID)
 }
 
-// Invalidate and InvalidateGlobal are package-level helpers over DefaultCache,
-// for use from mutation handlers (same request that performs the write).
-func Invalidate(segID, sessionID string)     { DefaultCache.Invalidate(segID, sessionID) }
-func InvalidateGlobal(segID string)           { DefaultCache.InvalidateGlobal(segID) }
+func Invalidate(segID, sessionID string) { DefaultCache.Invalidate(segID, sessionID) }
+func InvalidateGlobal(segID string)      { DefaultCache.InvalidateGlobal(segID) }
 
-// SessionID returns a stable per-browser id, creating one on first visit.
 func SessionID(w http.ResponseWriter, r *http.Request) string {
 	const name = "seg_session"
 	if c, err := r.Cookie(name); err == nil && c.Value != "" {
@@ -228,17 +215,15 @@ func Page(w http.ResponseWriter, r *http.Request, title string, leaf templ.Compo
 	PageWith(w, r, title, leaf)
 }
 
-// PageWith is Page plus extra out-of-band components (e.g. tab chrome).
 func PageWith(w http.ResponseWriter, r *http.Request, title string, leaf templ.Component, extra ...templ.Component) {
 	stack := StackFrom(r)
 	if len(stack) == 0 {
-		// bare handler with no segments: just the leaf, no htmx wiring
 		_ = leaf.Render(r.Context(), w)
 		return
 	}
 
 	mounted := mountedSet(r)
-	i := commonPrefixLen(stack, mounted) // client already has stack[:i]
+	i := commonPrefixLen(stack, mounted)
 
 	if !isHX(r) || i == 0 {
 		renderFull(w, r, title, stack, leaf)
@@ -248,8 +233,8 @@ func PageWith(w http.ResponseWriter, r *http.Request, title string, leaf templ.C
 }
 
 // renderFull renders the whole tree. A fragment with no shared prefix forces
-// a full page reload (HX-Refresh) rather than rebuilding the body, which
-// would destroy #outlet-root.
+// a full reload (HX-Refresh) rather than rebuilding the body (which would
+// destroy #outlet-root).
 func renderFull(w http.ResponseWriter, r *http.Request, title string, stack []Segment, leaf templ.Component) {
 	ids := stackIDs(stack)
 	ctx := withTitle(withPath(withStackIDs(r.Context(), ids), r.URL.Path), title)
@@ -261,7 +246,6 @@ func renderFull(w http.ResponseWriter, r *http.Request, title string, stack []Se
 		return
 	}
 
-	// full document load
 	comp := leaf
 	for j := len(stack) - 1; j >= 0; j-- {
 		s := stack[j]
@@ -297,10 +281,9 @@ func renderExpanded(w http.ResponseWriter, r *http.Request, title string, leaf t
 	_ = templ.Join(parts...).Render(ctx, w)
 }
 
-// renderTail renders only the missing tail of the stack plus the leaf, and
-// tells htmx where to put it. Fragment navigations clear an open page-modal
-// (ClearModal OOB); keeping a modal open is solely the job of responses that
-// target #modal-root (Modalable).
+// renderTail renders only the missing tail of the stack plus the leaf.
+// Fragment navigations clear an open page-modal (ClearModal OOB); keeping a
+// modal open is the job of responses that target #modal-root (Modalable).
 func renderTail(w http.ResponseWriter, r *http.Request, title string, stack []Segment, i int, leaf templ.Component, extra []templ.Component) {
 	ids := stackIDs(stack)
 	ctx := withPath(withStackIDs(r.Context(), ids), r.URL.Path)
@@ -332,8 +315,6 @@ func OOBTitle(title string) templ.Component {
 	})
 }
 
-// ClearModal is included in every fragment navigation so leaving a modal
-// cleans up.
 func ClearModal() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
 		_, err := io.WriteString(w, `<div id="modal-root" hx-swap-oob="innerHTML"></div>`)
@@ -341,8 +322,6 @@ func ClearModal() templ.Component {
 	})
 }
 
-// NotifBadge updates the dashboard badge out-of-band; a count of zero swaps
-// in the hidden variant so no "0" bubble is left.
 func NotifBadge(n int) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
 		if n > 0 {
@@ -355,12 +334,11 @@ func NotifBadge(n int) templ.Component {
 	})
 }
 
-// ModalOpts describes how a page-modal shell is drawn.
 type ModalOpts struct {
-	CloseX   bool   // show the × close button
-	Esc      bool   // Escape closes
-	Backdrop bool   // clicking the backdrop closes
-	Expand   bool   // show the expand-to-page button
+	CloseX   bool
+	Esc      bool
+	Backdrop bool
+	Expand   bool
 	Size     string // "", "sm", "md", "lg"
 }
 
@@ -368,17 +346,14 @@ type ShellFunc func(ctx context.Context, opts ModalOpts, owner, current, parent 
 
 type LeafFunc func(r *http.Request) (title string, leaf templ.Component)
 
-// X-Modal values: "page" opens a page-modal, "keep" stays inside the open
-// shell (leaf-only swap), "none" expands to the full page.
 const (
 	ModalPage = "page"
 	ModalKeep = "keep"
 	ModalNone = "none"
 )
 
-// Header helpers for links. ModalNoneHeader also names the segment to drop
-// from the mounted stack (it only exists inside the modal); ModalKeepHeader
-// is baked in by the server, so the client reports no modal state.
+// Header helpers for links: "page" opens a page-modal, "keep" stays inside
+// the open shell, "none" (expand) renders the full page.
 func PageModalHeader() string { return `{"X-Modal":"page"}` }
 func ModalNoneHeader(owner string) string {
 	return `{"X-Modal":"none","X-Drop-Segments":"` + owner + `"}`
@@ -391,11 +366,10 @@ func ModalMarker(r *http.Request) string {
 	return r.Header.Get(headerModal)
 }
 
-// Modalable serves the same URL differently per the X-Modal header: "" renders
-// through the full stack, "page" wraps the leaf in a modal shell at
-// #modal-root, "keep" returns just the leaf into the open shell's outlet,
-// "none" renders the full page. oob lists out-of-band components appended so
-// on-screen chrome stays fresh.
+// Modalable serves the same URL per the X-Modal header: "" renders through
+// the full stack, "page" wraps the leaf in a modal shell at #modal-root,
+// "keep" returns just the leaf into the open shell's outlet, "none" renders
+// the full page. oob lists out-of-band components appended to responses.
 func Modalable(shell ShellFunc, leaf LeafFunc, opts ModalOpts, oob ...templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		marker := ModalMarker(r)
@@ -403,8 +377,6 @@ func Modalable(shell ShellFunc, leaf LeafFunc, opts ModalOpts, oob ...templ.Comp
 
 		switch marker {
 		case "":
-			// Full-page navigation: render through the stack and OOB-refresh
-			// chrome (tabs) so the active state updates with the URL.
 			PageWith(w, r, title, comp, oob...)
 			return
 
@@ -413,8 +385,6 @@ func Modalable(shell ShellFunc, leaf LeafFunc, opts ModalOpts, oob ...templ.Comp
 			return
 
 		case ModalKeep:
-			// owner comes from X-Modal-Owner, baked into the link by the server
-			// at render time (seg.ModalOwner) — not client-reported state.
 			owner := r.Header.Get(headerModalOwner)
 			w.Header().Set("HX-Retarget", "#modal-root [data-page-modal] #outlet-"+owner)
 			w.Header().Set("HX-Reswap", "innerHTML")
@@ -442,9 +412,8 @@ func Modalable(shell ShellFunc, leaf LeafFunc, opts ModalOpts, oob ...templ.Comp
 			comp = last.Render(ctx, Data(ctx, last.ID), comp)
 		}
 
-		// "Back"/close should return to the page the modal was opened from.
-		// htmx sends HX-Current-URL on every request; on a direct modal-URL
-		// load it's absent, so fall back to the URL parent.
+		// Close/back should return to the page the modal was opened from
+		// (HX-Current-URL); on a direct modal-URL load, fall back to the parent.
 		parent := r.Header.Get("HX-Current-URL")
 		if parent == "" {
 			parent = parentURL(r.URL.Path)

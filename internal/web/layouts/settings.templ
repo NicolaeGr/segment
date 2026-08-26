@@ -19,7 +19,7 @@ templ SettingsTabs() {
 	</nav>
 }
 
-// refreshes the tab bar in place after a leaf-only swap.
+// SettingsTabsOOB refreshes the tab bar in place after a leaf-only swap.
 templ SettingsTabsOOB() {
 	<nav id={ settingsTabsID(seg.InModal(ctx)) } hx-swap-oob="outerHTML" class="flex items-center gap-1 border-b border-border text-sm">
 		@SettingsTab("/dashboard/settings", "General")
@@ -28,7 +28,8 @@ templ SettingsTabsOOB() {
 	</nav>
 }
 
-// required to be able to have both the page and modal without OOB-swap conflicts
+// settingsTabsID keeps the modal and page tab bars distinct so their OOB
+// swaps never collide (both can be mounted at once).
 func settingsTabsID(inModal bool) string {
 	if inModal {
 		return "settings-tabs-modal"

@@ -1,97 +1,133 @@
-// Package web wires the segment tree: chi nesting maps 1:1 onto the segment
-// stack — leaf handlers never name their layouts; they're implied by where
-// the route is registered.
 package web
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 
+	"example.com/segments/internal/auth"
+	"example.com/segments/internal/store"
 	"example.com/segments/internal/web/domain"
 	"example.com/segments/internal/web/layouts"
 	"example.com/segments/internal/web/pages"
 	"example.com/segments/internal/web/seg"
 )
 
-// Router returns the fully wired http.Handler.
-func Router() http.Handler {
+type Deps struct {
+	Store    *store.Store
+	Sessions *auth.SessionManager
+	Users    *store.Users
+}
+
+func New(d Deps) http.Handler {
 	r := chi.NewRouter()
 
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("assets"))))
 
 	root := seg.Segment{
-		ID:     "root",
-		Render: func(ctx context.Context, _ any, child templ.Component) templ.Component { return layouts.RootSegment(child) },
+		ID: "root",
+		Render: func(ctx context.Context, _ any, child templ.Component) templ.Component {
+			return layouts.RootSegment(child)
+		},
 	}
 	marketing := seg.Segment{
-		ID:     "marketing",
-		Render: func(ctx context.Context, _ any, child templ.Component) templ.Component { return layouts.MarketingSegment(child) },
+		ID: "marketing",
+		Render: func(ctx context.Context, _ any, child templ.Component) templ.Component {
+			return layouts.MarketingSegment(child)
+		},
 	}
-	auth := seg.Segment{
-		ID:     "auth",
-		Render: func(ctx context.Context, _ any, child templ.Component) templ.Component { return layouts.AuthSegment(child) },
+	authSeg := seg.Segment{
+		ID: "auth",
+		Render: func(ctx context.Context, _ any, child templ.Component) templ.Component {
+			return layouts.AuthSegment(child)
+		},
 	}
 	dashboard := seg.Segment{
 		ID:     "dashboard",
-		TTL:    5 * time.Minute,
-		Scoped: true, // per-user data
+		TTL:    30 * time.Second,
+		Scoped: true,
 		Render: func(ctx context.Context, _ any, child templ.Component) templ.Component {
 			return layouts.DashboardSegment(child)
 		},
 		Load: func(ctx context.Context) (any, error) {
-			return &domain.User{
-				Name:   "Ada Lovelace",
-				Email:  "ada@acme.example",
-				Notifs: 3,
-			}, nil
+			uid, ok := auth.UserIDFrom(ctx)
+			if !ok {
+				return nil, http.ErrNoCookie
+			}
+			u, err := d.Users.ByID(ctx, uid)
+			if err != nil {
+				return nil, err
+			}
+			return &domain.User{Name: u.Name, Email: u.Email, Notifs: 3}, nil
+		},
+		Decode: func(b []byte) (any, error) {
+			var u domain.User
+			if err := json.Unmarshal(b, &u); err != nil {
+				return nil, err
+			}
+			return &u, nil
 		},
 	}
 	settings := seg.Segment{
 		ID:     "settings",
 		TTL:    5 * time.Minute,
-		Scoped: true, // per-user data
-		Render: func(ctx context.Context, _ any, child templ.Component) templ.Component { return layouts.SettingsSegment(child) },
-		Load:   func(ctx context.Context) (any, error) { return &domain.BadgeCounts{N: 7}, nil },
+		Scoped: true,
+		Render: func(ctx context.Context, _ any, child templ.Component) templ.Component {
+			return layouts.SettingsSegment(child)
+		},
+		Load: func(ctx context.Context) (any, error) { return &domain.BadgeCounts{N: 7}, nil },
+		Decode: func(b []byte) (any, error) {
+			var c domain.BadgeCounts
+			if err := json.Unmarshal(b, &c); err != nil {
+				return nil, err
+			}
+			return &c, nil
+		},
 	}
 
-	// The root segment owns the document; every branch sits under it.
+	// Logout must be reachable without the dashboard subtree.
+	r.Post("/logout", func(w http.ResponseWriter, r *http.Request) {
+		d.Sessions.Destroy(w, r)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	})
+
 	r.Route("/", func(r chi.Router) {
 		r.Use(seg.Use(root))
 
-		// A group (not a nested route) because these live at the root path.
 		r.Group(func(r chi.Router) {
 			r.Use(seg.Use(marketing))
 			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-				seg.Page(w, r, "Segments — server-driven layouts", pages.Home())
+				seg.Page(w, r, "Home", pages.Home())
 			})
 			r.Get("/about", func(w http.ResponseWriter, r *http.Request) {
-				seg.Page(w, r, "How it works — Segments", pages.About())
+				seg.Page(w, r, "About", pages.About())
 			})
 		})
 
-		// The auth branch: gradient, scroll-lock, back button.
 		r.Group(func(r chi.Router) {
-			r.Use(seg.Use(auth))
-			r.Post("/login", handleLogin)
+			r.Use(seg.Use(authSeg))
+			r.Post("/login", handleLogin(d))
 			r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
-				seg.Page(w, r, "Sign in — Segments", pages.Login())
+				if _, err := d.Sessions.UserID(r); err == nil {
+					http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+					return
+				}
+				seg.Page(w, r, "Sign in", pages.Login())
 			})
 		})
 
-		// The authed app.
 		r.Route("/dashboard", func(r chi.Router) {
+			r.Use(d.Sessions.RequireAuth)
 			r.Use(seg.Use(dashboard))
 
 			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-				seg.Page(w, r, "Overview — Acme", pages.DashHome())
+				seg.Page(w, r, "Overview", pages.DashHome())
 			})
 
-			// Mark notifications read: invalidate the cached user (next request
-			// refetches) and update the visible badge via OOB now.
 			r.Post("/notifications/read", func(w http.ResponseWriter, r *http.Request) {
 				sid := seg.SessionID(w, r)
 				seg.Invalidate("dashboard", sid)
@@ -102,8 +138,6 @@ func Router() http.Handler {
 			r.Route("/settings", func(r chi.Router) {
 				r.Use(seg.Use(settings))
 
-				// Same URL serves the full page or a modal (see seg.Modalable).
-				// oob keeps the tab bar fresh on modal responses.
 				shell := func(ctx context.Context, opts seg.ModalOpts, owner, current, parent string, child templ.Component) templ.Component {
 					return layouts.ModalShell(opts, owner, current, parent, child)
 				}
@@ -115,7 +149,6 @@ func Router() http.Handler {
 			})
 		})
 
-		// A leaf action; the toast comes via the HX-Trigger.
 		r.Post("/billing/export", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("HX-Trigger", `showToast`)
 			w.WriteHeader(http.StatusOK)
@@ -125,8 +158,23 @@ func Router() http.Handler {
 	return r
 }
 
-func handleLogin(w http.ResponseWriter, r *http.Request) {
-	_ = r.ParseForm()
-	w.Header().Set("HX-Push-Url", "/dashboard")
-	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+func handleLogin(d Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_ = r.ParseForm()
+		u, err := d.Users.ByEmail(r.Context(), r.FormValue("email"))
+		if err != nil || !store.CheckPassword(u, r.FormValue("password")) {
+			http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+			return
+		}
+		if err := d.Sessions.Create(w, u.ID); err != nil {
+			http.Error(w, "could not start session", http.StatusInternalServerError)
+			return
+		}
+		if r.Header.Get("HX-Request") == "true" {
+			w.Header().Set("HX-Redirect", "/dashboard")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	}
 }

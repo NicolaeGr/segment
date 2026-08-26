@@ -1,26 +1,20 @@
 package pages
 
-import (
-	"example.com/segments/internal/web/seg"
-	"net/http"
-)
+import "net/http"
 
 templ Billing() {
 	<div class="mx-auto max-w-2xl space-y-8">
 		<div>
 			<h1 class="text-2xl font-bold tracking-tight">Billing</h1>
-			<p class="mt-1 text-sm text-muted-foreground">
-				Under <code class="rounded bg-muted px-1.5 py-0.5">root → dashboard → settings</code>.
-				Badge count { badge(seg.Data(ctx, "settings")) } came from the settings segment mount — no refetch here.
-			</p>
+			<p class="mt-1 text-sm text-muted-foreground">Manage your plan and invoices.</p>
 		</div>
 		<div class="rounded-lg border border-border bg-background p-5">
 			<div class="flex items-center justify-between">
 				<div>
-					<p class="text-sm font-medium">Pro plan</p>
-					<p class="text-sm text-muted-foreground">$29 / month</p>
+					<p class="text-sm font-medium">Current plan</p>
+					<p class="text-sm text-muted-foreground">—</p>
 				</div>
-				<span class="rounded-full border border-border px-3 py-1 text-xs font-medium">Active</span>
+				<span class="rounded-full border border-border px-3 py-1 text-xs font-medium">—</span>
 			</div>
 			<div class="mt-4 border-t border-border pt-4">
 				<button
@@ -28,37 +22,22 @@ templ Billing() {
 					class="btn btn-outline"
 					hx-post="/billing/export"
 					hx-swap="none"
-				>Export invoice</button>
+				>Export</button>
 			</div>
 		</div>
 		<div class="rounded-lg border border-border bg-background">
 			<div class="flex items-center justify-between border-b border-border px-5 py-3">
 				<p class="text-sm font-semibold">Invoices</p>
-				<span class="text-xs text-muted-foreground">3</span>
 			</div>
 			<div class="divide-y divide-border text-sm">
-				@InvoiceRow("Aug 2026", "$29.00", "Paid")
-				@InvoiceRow("Jul 2026", "$29.00", "Paid")
-				@InvoiceRow("Jun 2026", "$29.00", "Paid")
+				<p class="px-5 py-4 text-muted-foreground">No invoices yet.</p>
 			</div>
 		</div>
 	</div>
 }
 
-templ InvoiceRow(period, amount, status string) {
-	<div class="flex items-center justify-between px-5 py-3">
-		<span>{ period }</span>
-		<span class="flex items-center gap-3 text-muted-foreground">
-			{ amount }
-			<span class="rounded-full border border-border px-2.5 py-0.5 text-xs">{ status }</span>
-		</span>
-	</div>
-}
-
 func billingLeaf(r *http.Request) (string, templ.Component) {
-	return "Billing — Acme", Billing()
+	return "Billing", Billing()
 }
 
-// Exported leaf so the billing route can serve both the full page and the
-// in-modal (settings tab) contexts with the same title/component.
 var BillingLeaf = billingLeaf

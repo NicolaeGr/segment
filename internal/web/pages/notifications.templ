@@ -6,33 +6,22 @@ templ NotificationsIndex() {
 	<div class="mx-auto max-w-2xl space-y-8">
 		<div>
 			<h1 class="text-2xl font-bold tracking-tight">Notifications</h1>
-			<p class="mt-1 text-sm text-muted-foreground">
-				Choose what reaches you in-app and by email.
-			</p>
+			<p class="mt-1 text-sm text-muted-foreground">Choose what reaches you in-app and by email.</p>
 		</div>
 		<div class="divide-y divide-border rounded-lg border border-border bg-background">
 			@NotifToggle("Email notifications", "Product news, billing and security alerts.", true)
 			@NotifToggle("In-app notifications", "Activity from your team and workspace.", true)
 			@NotifToggle("Weekly digest", "A summary of everything that happened.")
 		</div>
-		<div class="rounded-lg border border-border bg-muted/40 p-5 text-sm text-muted-foreground">
-			<p>
-				<strong class="font-medium text-foreground">Segment data:</strong>
-				these toggles live under <code class="rounded bg-muted px-1.5 py-0.5">root → dashboard → settings</code>,
-				so they render both here and inside the Settings modal — the URL is the
-				same; only the <code class="rounded bg-muted px-1.5 py-0.5">X-Modal</code> header differs.
-			</p>
-		</div>
 	</div>
 }
 
 func notificationsTitle(r *http.Request) string {
-	return "Notifications — Acme"
+	return "Notifications"
 }
 
 func notificationsLeaf(r *http.Request) (string, templ.Component) {
 	return notificationsTitle(r), NotificationsIndex()
 }
 
-// Exported leaf for the web package's Modalable registration.
 var NotificationsLeaf = notificationsLeaf

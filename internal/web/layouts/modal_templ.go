@@ -10,8 +10,8 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import "example.com/segments/internal/web/seg"
 
-// ModalShell renders a page-modal shell inside #modal-root. current is the URL
-// the modal is open at; parent is the URL "back" should go to.
+// ModalShell renders a page-modal shell inside #modal-root. current is the
+// URL the modal is open at; parent is the URL "back" should go to.
 func ModalShell(opts seg.ModalOpts, owner, current, parent string, child templ.Component) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context

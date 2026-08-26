@@ -47,7 +47,7 @@ func NotificationsIndex() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"rounded-lg border border-border bg-muted/40 p-5 text-sm text-muted-foreground\"><p><strong class=\"font-medium text-foreground\">Segment data:</strong> these toggles live under <code class=\"rounded bg-muted px-1.5 py-0.5\">root → dashboard → settings</code>, so they render both here and inside the Settings modal — the URL is the same; only the <code class=\"rounded bg-muted px-1.5 py-0.5\">X-Modal</code> header differs.</p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -56,14 +56,13 @@ func NotificationsIndex() templ.Component {
 }
 
 func notificationsTitle(r *http.Request) string {
-	return "Notifications — Acme"
+	return "Notifications"
 }
 
 func notificationsLeaf(r *http.Request) (string, templ.Component) {
 	return notificationsTitle(r), NotificationsIndex()
 }
 
-// Exported leaf for the web package's Modalable registration.
 var NotificationsLeaf = notificationsLeaf
 
 var _ = templruntime.GeneratedTemplate

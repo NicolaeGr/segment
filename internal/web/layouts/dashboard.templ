@@ -15,7 +15,7 @@ templ DashboardSegment(child templ.Component) {
 					<span
 						class="grid h-7 w-7 place-items-center rounded-lg bg-foreground text-background text-sm font-semibold"
 					>S</span>
-					<span class="font-semibold tracking-tight">Segments</span>
+					<span class="font-semibold tracking-tight">Segment</span>
 				</div>
 				<nav class="flex-1 space-y-1 p-3 text-sm">
 					<div class="px-3 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -88,7 +88,7 @@ templ DashboardSegment(child templ.Component) {
 				<header
 					class="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur"
 				>
-					<div class="text-sm font-medium text-muted-foreground">Acme Inc.</div>
+					<div class="text-sm font-medium text-muted-foreground">Workspace</div>
 					<div class="flex items-center gap-2">
 						<button
 							type="button"
@@ -114,14 +114,7 @@ templ DashboardSegment(child templ.Component) {
 							</div>
 							<div class="my-1 border-t border-border"></div>
 							<ul class="space-y-1">
-								<li class="flex items-center justify-between rounded-md px-3 py-2 hover:bg-muted">
-									<span>New signup from acme.org</span>
-									<span class="text-xs text-muted-foreground">2m</span>
-								</li>
-								<li class="flex items-center justify-between rounded-md px-3 py-2 hover:bg-muted">
-									<span>Invoice #2041 paid</span>
-									<span class="text-xs text-muted-foreground">1h</span>
-								</li>
+								<li class="px-3 py-2 text-muted-foreground">No notifications.</li>
 							</ul>
 							<div class="my-1 border-t border-border"></div>
 							<a
@@ -141,8 +134,7 @@ templ DashboardSegment(child templ.Component) {
 	</div>
 }
 
-// NotifBadge shows the unread count badge on the header bell (OOB-updated by
-// seg.NotifBadge); hidden when the count is 0.
+// NotifBadge shows the unread count badge on the header bell; hidden at 0.
 templ NotifBadge(u any) {
 	if n := notifCount(u); n > 0 {
 		<span id="notif-badge" class="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] font-semibold text-background">{ strconv.Itoa(n) }</span>
