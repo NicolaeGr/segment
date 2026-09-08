@@ -1,4 +1,4 @@
-module example.com/segments
+module github.com/nicolaegr/segment
 
 go 1.26.5
 

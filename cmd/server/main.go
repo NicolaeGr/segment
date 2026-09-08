@@ -9,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"example.com/segments/internal/auth"
-	"example.com/segments/internal/config"
-	"example.com/segments/internal/store"
-	"example.com/segments/internal/web"
-	"example.com/segments/internal/web/seg"
+	"github.com/nicolaegr/segment/internal/auth"
+	"github.com/nicolaegr/segment/internal/config"
+	"github.com/nicolaegr/segment/internal/store"
+	"github.com/nicolaegr/segment/internal/web"
+	"github.com/nicolaegr/segment/internal/web/seg"
 )
 
 func main() {

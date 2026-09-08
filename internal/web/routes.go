@@ -9,12 +9,12 @@ import (
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 
-	"example.com/segments/internal/auth"
-	"example.com/segments/internal/store"
-	"example.com/segments/internal/web/domain"
-	"example.com/segments/internal/web/layouts"
-	"example.com/segments/internal/web/pages"
-	"example.com/segments/internal/web/seg"
+	"github.com/nicolaegr/segment/internal/auth"
+	"github.com/nicolaegr/segment/internal/store"
+	"github.com/nicolaegr/segment/internal/web/domain"
+	"github.com/nicolaegr/segment/internal/web/layouts"
+	"github.com/nicolaegr/segment/internal/web/pages"
+	"github.com/nicolaegr/segment/internal/web/seg"
 )
 
 type Deps struct {

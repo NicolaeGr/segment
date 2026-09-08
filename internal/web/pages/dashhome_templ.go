@@ -9,8 +9,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"example.com/segments/internal/web/domain"
-	"example.com/segments/internal/web/seg"
+	"github.com/nicolaegr/segment/internal/web/domain"
+	"github.com/nicolaegr/segment/internal/web/seg"
 )
 
 func DashHome() templ.Component {
