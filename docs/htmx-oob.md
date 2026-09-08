@@ -1,5 +1,7 @@
 # Out-of-band swaps — why they exist, and when to use them
 
+> On htmx 4 the renderer ships these extra-region updates as partials (`<template hx type="partial" hx-target="…" hx-swap="…">`), not `hx-swap-oob` attributes. The behavior below is unchanged. The helpers in `seg.go` (`OOBTitle`, `ClearModal`, `NotifBadge`) keep their names but now emit partial templates.
+
 ## The problem: fragment navigation leaves holes
 
 A fragment navigation swaps in the _middle_ of the page. But a page is more than its middle:
@@ -26,10 +28,10 @@ flowchart TB
 
 ## What the renderer does for you automatically
 
-The segment renderer already appends the three most common OOB bits to every fragment, so you get them for free:
+The segment renderer already appends the three most common extra-region updates to every fragment, so you get them for free:
 
-1. **`OOBTitle`** — the `<title>` swaps with every navigation. Without it, the tab name would describe the page you _came from_.
-2. **`ClearModal`** — an empty `#modal-root` swaps out-of-band, so navigating away from a modal tears it down. (Responses that are _about_ the modal target `#modal-root` directly and intentionally omit this — that's what keeps the modal open.)
+1. **`OOBTitle`** — a partial replaces the `<head>` `<title>` with every navigation. Without it, the tab name would describe the page you _came from_.
+2. **`ClearModal`** — a partial swaps an empty `#modal-root`, so navigating away from a modal tears it down. (Responses that are _about_ the modal target `#modal-root` directly and intentionally omit this — that's what keeps the modal open.)
 3. **The `segments` trigger** — not a DOM swap but a custom event telling the client which segments are now mounted, so the _next_ request reports a correct stack. This is the "state" that keeps the whole diff cheap.
 
 ## When _you_ reach for OOB: chrome that can go stale
@@ -74,8 +76,8 @@ Two things make this work:
 | Situation                                    | What to do                                                                                |
 | -------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | Navigating between pages                     | Renderer handles title, modal cleanup, stack trigger automatically.                       |
-| Chrome whose data you just mutated           | OOB-swap it in the mutation handler (badge), or invalidate so the next render is correct. |
-| Same chrome exists in a modal _and_ the page | Two distinct ids; OOB both where needed.                                                  |
-| Replacing a whole element (nav, list)        | `hx-swap-oob="outerHTML"`.                                                                |
-| Clearing/emptying a container (modal)        | Swap an empty element with matching id.                                                   |
+| Chrome whose data you just mutated           | Partial-swap it in the mutation handler (badge), or invalidate so the next render is correct. |
+| Same chrome exists in a modal _and_ the page | Two distinct ids; partial both where needed.                                                  |
+| Replacing a whole element (nav, list)        | `hx-swap="outerHTML"` partial.                                                               |
+| Clearing/emptying a container (modal)        | Partial-swap `#modal-root` innerHTML.                                                         |
 | An action with no visible result             | `HX-Trigger` event (toast), not a fake swap.                                              |

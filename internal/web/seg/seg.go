@@ -308,30 +308,28 @@ func renderTail(w http.ResponseWriter, r *http.Request, title string, stack []Se
 	_ = templ.Join(parts...).Render(ctx, w)
 }
 
-func OOBTitle(title string) templ.Component {
+// partial emits an htmx 4 partial that swaps body into target.
+func partial(target, swap, body string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-		_, err := io.WriteString(w, "<title hx-swap-oob=\"true\">"+templ.EscapeString(title)+"</title>")
+		_, err := io.WriteString(w, `<template hx type="partial" hx-target="`+target+`" hx-swap="`+swap+`">`+body+`</template>`)
 		return err
 	})
+}
+
+func OOBTitle(title string) templ.Component {
+	return partial("title", "outerHTML", `<title>`+templ.EscapeString(title)+`</title>`)
 }
 
 func ClearModal() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-		_, err := io.WriteString(w, `<div id="modal-root" hx-swap-oob="innerHTML"></div>`)
-		return err
-	})
+	return partial("#modal-root", "innerHTML", ``)
 }
 
 func NotifBadge(n int) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-		if n > 0 {
-			_, err := io.WriteString(w, fmt.Sprintf(
-				`<span id="notif-badge" hx-swap-oob="true" class="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] font-semibold text-background">%d</span>`, n))
-			return err
-		}
-		_, err := io.WriteString(w, `<span id="notif-badge" class="hidden" hx-swap-oob="true" aria-hidden="true"></span>`)
-		return err
-	})
+	if n > 0 {
+		return partial("#notif-badge", "outerHTML", fmt.Sprintf(
+			`<span id="notif-badge" class="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] font-semibold text-background">%d</span>`, n))
+	}
+	return partial("#notif-badge", "outerHTML", `<span id="notif-badge" class="hidden" aria-hidden="true"></span>`)
 }
 
 type ModalOpts struct {

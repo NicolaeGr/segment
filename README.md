@@ -69,5 +69,5 @@ All settings are env-driven (`internal/config/config.go`):
 ## Docs
 
 - **[docs/segments.md](docs/segments.md)** — the segment stack: why the page is a stack, why the URL decides everything, why data binds to mount, and why invalidation is explicit.
-- **[docs/htmx-oob.md](docs/htmx-oob.md)** — out-of-band swaps: why fragment navigation leaves holes, and when (and when not) to reach for OOB.
+- **[docs/htmx-oob.md](docs/htmx-oob.md)** — out-of-band/partial updates: why fragment navigation leaves holes, when (and when not) to reach for extra-region swaps, and how the renderer ships them as htmx 4 partials.
 - **[docs/adding-a-page.md](docs/adding-a-page.md)** — adding a page with the least code, and the thinking that makes it work.

@@ -48,7 +48,7 @@ func RootSegment(child templ.Component) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"stylesheet\" href=\"/static/output.css\"><script src=\"/static/theme.js\"></script><script defer src=\"https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js\"></script><script defer src=\"https://unpkg.com/alpinejs@3.14.9/dist/cdn.min.js\"></script><script type=\"module\" src=\"https://unpkg.com/@oddbird/css-anchor-positioning\"></script><script src=\"/static/app.js\" defer></script></head><body data-stack=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"stylesheet\" href=\"/static/output.css\"><script src=\"/static/theme.js\"></script><script defer src=\"https://unpkg.com/htmx.org@4.0.0/dist/htmx.min.js\"></script><script defer src=\"https://unpkg.com/alpinejs@3.14.9/dist/cdn.min.js\"></script><script type=\"module\" src=\"https://unpkg.com/@oddbird/css-anchor-positioning\"></script><script src=\"/static/app.js\" defer></script></head><body data-stack=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

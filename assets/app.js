@@ -9,23 +9,25 @@
 // has root,dashboard,settings mounted).
 let mounted = (document.body.dataset.stack || "root").split(",");
 
-document.body.addEventListener("htmx:configRequest", (e) => {
+document.body.addEventListener("htmx:config:request", (e) => {
+  const req = e.detail.ctx.request;
+
   // X-Drop-Segments (baked into the expand button) marks a "leave the modal
   // and render the whole page" request. The modal's segments were reported
   // as mounted, but the page is about to be re-rendered from scratch, so
   // drop everything except root — every segment's Load runs again and the
   // re-rendered layout gets fresh data.
-  const drop = e.detail.headers["X-Drop-Segments"];
+  const drop = req.headers["X-Drop-Segments"];
   if (drop) {
     mounted = ["root"];
   }
 
-  e.detail.headers["X-Mounted-Segments"] = mounted.join(",");
+  req.headers["X-Mounted-Segments"] = mounted.join(",");
 
   // The expand button carries the modal's open URL, but the user may have
   // navigated within the modal — request the live path instead.
-  if (e.detail.headers["X-Modal"] === "none") {
-    e.detail.path = location.pathname + location.search;
+  if (req.headers["X-Modal"] === "none") {
+    req.action = location.pathname + location.search;
   }
 });
 
